@@ -1,6 +1,10 @@
 from menu import create_menu
 
-
+# function to display the top-level 'flights' menu - 'Flight Management' menu and handle user 
+# selection. Accepts the previous_menu to allow the user to return to the main
+# menu. Defines a nested function `return_to_flights_menu` that redisplays the
+# 'Flight Management' menu. Calls 'create_menu' to print the menu and handle 
+# user input. 
 def display_flights_menu(previous_menu):
     def return_to_flights_menu():
         display_flights_menu(previous_menu)
@@ -13,9 +17,9 @@ def display_flights_menu(previous_menu):
 }
     create_menu(flights_menu, previous_menu)
   
-
-    
-
+# function to display the 'Update a Flight' menu and handle user 
+# selection. Accepts the previous_menu to allow the user to return to the 'Flight 
+# Management' menu. Calls 'create_menu' to print the menu and handle user input. 
 def update_flights_menu():
     update_flights_menu = {
         "heading": "=== Update a Flight Menu ===",

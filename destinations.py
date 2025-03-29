@@ -1,4 +1,4 @@
-
+# function to display the 
 def display_destinations_menu():
     destinations_menu = {
         "heading": "=== Destination Management Menu ===",
