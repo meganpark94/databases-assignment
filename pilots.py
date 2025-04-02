@@ -1,3 +1,4 @@
+import sqlite3
 from menu import create_menu
 
 
@@ -37,3 +38,34 @@ def update_details():
 def view_pilots_for_destination():
     print("x")
 
+
+
+def display_pilots(only_available=None, departure_time=None, arrival_time=None):
+    conn = sqlite3.connect('flight_management')
+    query = "SELECT pilot_id, first_name, last_name FROM pilots"
+    if only_available:
+        query += ''' WHERE pilot_id NOT IN (
+            SELECT pilot_id FROM flights 
+            WHERE (
+            (departure_time <= ? AND arrival_time >= ?)  -- Overlapping departure
+            OR
+            (departure_time <= ? AND arrival_time >= ?)  -- Overlapping arrival
+            OR
+            (departure_time >= ? AND arrival_time <= ?)  -- Fully inside another flight
+            )
+            )'''
+        params = (departure_time, departure_time, arrival_time, arrival_time, departure_time, arrival_time)
+    else:
+        params = ()
+
+    pilots = conn.execute(query, params).fetchall()
+    conn.close
+
+    if not pilots: 
+        print("\nNo matching pilots found.")
+        return None
+    
+    for pilot_id, first_name, last_name in pilots: 
+         print(f"ID: {pilot_id} | Name: {first_name} {last_name}")
+    
+    return pilots

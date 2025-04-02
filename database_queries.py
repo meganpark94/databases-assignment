@@ -194,6 +194,10 @@ def update_flight_status():
     
     conn.commit()
     conn.close()
+conn.execute('''UPDATE flights
+SET pilot_id = NULL
+WHERE pilot_id IN (1, 5, 6, 8, 9)''')
+
 
 conn.commit()
 conn.close()

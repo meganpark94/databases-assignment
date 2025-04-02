@@ -1,6 +1,8 @@
 from datetime import datetime
 from menu import clear_console, create_menu
 import sqlite3
+
+from pilots import display_pilots
 date_format = "%Y-%m-%d %H:%M:%S"
 # function to display the top-level 'flights' menu - 'Flight Management' menu and handle user 
 # selection. Accepts the previous_menu to allow the user to return to the main
@@ -26,20 +28,13 @@ def update_flights_menu(previous_menu):
     update_flights_menu = {
         "heading": "=== Update a Flight Menu ===",
     "1": ("Change departure time", change_departure_time),
-    
-    "3": ("Change flight status", cancel_a_flight), # including cancel
-    "5": ("Assign or updated assigned pilot", assign_update_pilot),
-    "6": ("Update flight destination", update_flight_destination),
+    "2": ("Cancel a flight", cancel_a_flight), # including cancel
+    "3": ("Assign or update assigned pilot", assign_update_pilot),
+    "4": ("Update flight destination", update_flight_destination),
+    "5": ("Return to Previous Menu", lambda: previous_menu()),
 }
     create_menu(update_flights_menu, previous_menu)
 
-def is_valid_datetime(date_string, date_format="%Y-%m-%d %H:%M:%S"):
-    try:
-        # Try to parse the date string into a datetime object using the provided format
-        datetime.strptime(date_string, date_format)
-        return True  # If parsing is successful, it's a valid format
-    except ValueError:
-        return False  # If there's a ValueError, the format is incorrect
     
 # function to update the departure time of a flight. Calls 'display_flights' with a list of
 # relavent columns to display and 'is_future' set to true to display only upcoming flights. 
@@ -95,12 +90,17 @@ def change_departure_time():
 
 
 
-
+# function to change the status of a flight to 'cancelled'. Calls 'display_flights' with a list of
+# relevant columns to display and excludes flights which are already cancelled.
+# Asks the user to input the ID of the flight they want to cancel then checks it's a valid
+# flight_id. Asks the user to confirm they wish to cancel the flight. Displays a success message to 
+# the user after they choose to cancel the flight, or returns to the 'Update a flight' menu if the user
+# opts not to cancel the flight.
 def cancel_a_flight():
     clear_console()
     while True:
         print("==========Flights==========\n")
-        flights = display_flights(columns=["flight_id", "flight_number", "status"])
+        flights = display_flights(columns=["flight_id", "flight_number", "status"], exclude_status="cancelled")
         flight_id = input("\nPlease enter the flight_id of the flight you'd like to cancel: ")
         try: flight_id = int(flight_id)
         except ValueError:
@@ -113,7 +113,7 @@ def cancel_a_flight():
                 flight_number = flight_to_update[1]
                 confirmation = input(f"\nPlease confirm that you wish to cancel flight {flight_number} (y/n):")
                 if confirmation.lower() == "n":
-                    print("Cancellation cancelled")
+                    print("\nCancellation aborted")
                     return
                 if confirmation.lower() == "y":
                     break
@@ -138,7 +138,48 @@ def cancel_a_flight():
 
 
 def assign_update_pilot():
-    print("x")
+    clear_console()
+    while True:
+        print("==========Flights==========\n")
+        flights = display_flights(columns=["flight_id", "flight_number", "pilot_id", "departure_time", "arrival_time"], exclude_status="cancelled")
+        flight_id = input("\nPlease enter the flight_id of the flight you'd like to assign a pilot to: ")
+        try: flight_id = int(flight_id)
+        except ValueError:
+            print("\nInvalid input. Please enter a valid flight ID.")
+            continue
+        flight_to_update = next((flight for flight in flights if flight[0] == flight_id), None)
+
+        if flight_to_update:
+            flight_number = flight_to_update[1]
+            departure_time = flight_to_update[3]
+            arrival_time = flight_to_update[4]
+            while True:
+                print("==========Available Pilots==========\n")
+                pilots = display_pilots(only_available=True, departure_time=departure_time, arrival_time=arrival_time)
+                pilot_id = input(f"\nPlease enter the pilot_id of the pilot you'd like to assign to flight {flight_number}: ")
+                try: pilot_id = int(pilot_id)
+                except ValueError:
+                    print("\nInvalid input. Please enter a valid flight ID.")
+                    continue
+                pilot_to_assign = next((pilot for pilot in pilots if pilot[0] == pilot_id), None)
+
+                if pilot_to_assign:
+                    pilot_name = pilot_to_assign[1], pilot_to_assign[2]
+                    conn = sqlite3.connect('flight_management')
+                    conn.execute('''UPDATE flights
+                        SET pilot_id = ?
+                        WHERE flight_id = ?''', (pilot_id, flight_id) )
+                    conn.commit()
+                    conn.close()
+                    clear_console()
+                    print(f"Pilot {pilot_name} has been assigned to flight {flight_number}.")
+                    return
+                else:
+                    clear_console() 
+                    print(str(flight_id) + "\nInvalid choice, please try again.\n")
+        else:
+            clear_console() 
+            print(str(flight_id) + "\nInvalid choice, please try again.\n")
 
 def update_flight_destination():
     print("x")
@@ -177,30 +218,30 @@ def search_by_departure_date():
     print("x")
 
 # prints a list of all future flights
-def display_flights(columns=None, pilot=None, is_future=None, departure_date=None, status=None):
+def display_flights(columns=None, pilot=None, is_future=None, departure_date=None, exclude_status=None):
     conn = sqlite3.connect('flight_management')
     
     if not columns:
         columns = ["flight_id", "flight_number", "departure_airport_id", "arrival_airport_id", "pilot_id", "departure_time", "arrival_time", "status"]
     
     columns_str = ", ".join(columns)
-    query = f"SELECT {columns_str} FROM flights"
+    query = f"SELECT {columns_str} FROM flights WHERE 1=1"
     params=[]
 
     if is_future:
-        query += " WHERE departure_time >= CURRENT_TIMESTAMP"
+        query += " AND departure_time >= CURRENT_TIMESTAMP"
 
     if departure_date:
-        query += " WHERE DATE(departure_time) = ?"
+        query += " AND DATE(departure_time) = ?"
         params.append(departure_date)
 
     if pilot:
         query += " AND pilot_id = ?"
         params.append(pilot)
 
-    if status:
-        query += "AND status = ?"
-        params.append(status)
+    if exclude_status:
+        query += " AND status != ?"
+        params.append(exclude_status)
     
     flights = conn.execute(query, params).fetchall()
     conn.close
