@@ -1,4 +1,5 @@
 import sqlite3
+from flights import assign_update_pilot
 from menu import create_menu
 
 
@@ -18,7 +19,7 @@ def display_pilots_menu(previous_menu):
     create_menu(pilots_menu, previous_menu)
 
 def assign_pilot_to_flight():
-    print("x")
+    assign_update_pilot()
 
 def view_schedule():
     print("x")
@@ -39,14 +40,16 @@ def view_pilots_for_destination():
     print("x")
 
 
-
+# helper function to display a list of all pilots. Accpets a list of columns to display; if None, displays all columns.
+# Accepts other arguments to make the function resuable, allowing relevant columns to be displayed. 
 def display_pilots(only_available=None, departure_time=None, arrival_time=None):
     conn = sqlite3.connect('flight_management')
     query = "SELECT pilot_id, first_name, last_name FROM pilots"
+    params = ()
     if only_available:
         query += ''' WHERE pilot_id NOT IN (
-            SELECT pilot_id FROM flights 
-            WHERE (
+            SELECT DISTINCT pilot_id FROM flights 
+            WHERE pilot_id IS NOT NULL AND (
             (departure_time <= ? AND arrival_time >= ?)  -- Overlapping departure
             OR
             (departure_time <= ? AND arrival_time >= ?)  -- Overlapping arrival
@@ -55,11 +58,10 @@ def display_pilots(only_available=None, departure_time=None, arrival_time=None):
             )
             )'''
         params = (departure_time, departure_time, arrival_time, arrival_time, departure_time, arrival_time)
-    else:
-        params = ()
+    
 
     pilots = conn.execute(query, params).fetchall()
-    conn.close
+    conn.close()
 
     if not pilots: 
         print("\nNo matching pilots found.")
