@@ -1,6 +1,8 @@
 # function to display the 
 import sqlite3
 
+from menu import clear_console
+
 
 def display_destinations_menu():
     destinations_menu = {
@@ -36,9 +38,9 @@ def display_airports_and_destinations(departure_airport_id=None):
     if not airports:
         print("\nNo airports found.")
         return None
-
-    print("\n==========Airports==========")
+    clear_console()
+    print("==========Airports==========")
     for airport_id, airport_name, iata_code, city, country in airports:
         print(f"Airport ID: {airport_id} | Airport: {airport_name} | IATA code: {iata_code} | Destination: {city}, {country}")
-
+        print("-" * 50)
     return airports

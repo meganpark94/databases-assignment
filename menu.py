@@ -27,6 +27,7 @@ def display_menu(menu):
 # previous_menu is passed as an argument (previous_menu==none) the loop will break 
 # after execution, allowing the user to exit the program. 
 def create_menu(menu, previous_menu=None):
+    clear_console()
     while True:
         display_menu(menu)
         choice = input("\nEnter the corresponding menu number to make a choice: ")
