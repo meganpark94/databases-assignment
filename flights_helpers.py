@@ -1,41 +1,44 @@
-# helper function to fetch the flight details of a flight. Calls 'display_flights' with the provided
-# arguments, making the function reusable. Asks the user to input the ID of the flight they want to update,
-# verifies it's a valid flight_id and that it matches the criteria passed in (if provided), the returns the
-# flight details as a tuple.
 from datetime import datetime, timedelta
-from random import random
+import random
 import sqlite3
 from destinations import display_airports_and_destinations
 from menu import clear_console
 
 date_format = "%Y-%m-%d %H:%M:%S"
+
+# helper function to fetch the flight details of a flight. Calls 'display_flights' with the provided
+# arguments, making the function reusable. Asks the user to input the ID of the flight they want to update,
+# verifies it's a valid flight_id and that it matches the criteria passed in (if provided), then returns the
+# flight details as a tuple.
 def get_flight(type, columns=None, pilot=None, is_future=None, departure_date=None, exclude_status=None):
     clear_console()
     if is_future:
-        header = "========== Upcoming Flights==========\n"
+        header = "========== Upcoming Flights=========="
     else: 
-        header = "==========Flights==========\n"
-    
+        header = "==========Flights=========="
+    print(header)
+    flights = display_flights(columns=columns, pilot=pilot, is_future=is_future, departure_date=departure_date, exclude_status=exclude_status)
     while True:
-        print(header)
-        flights = display_flights(columns=columns, pilot=pilot, is_future=is_future, departure_date=departure_date, exclude_status=exclude_status)
         flight_id = input(f"\nPlease enter the Flight ID of the flight you'd like to {type}: ")
         try: 
             flight_id = int(flight_id)
         except ValueError:
             clear_console()
-            print("Your input: " + str(flight_id) + "\nInvalid input. Please enter a valid Flight ID.\n")
+            print(header)
+            flights = display_flights(columns=columns, pilot=pilot, is_future=is_future, departure_date=departure_date, exclude_status=exclude_status)
+            print("\nYour input: " + str(flight_id) + "\nInvalid input. Please enter a valid Flight ID.")
             continue
         flight = next((flight for flight in flights if flight[0] == flight_id), None)
         if flight:
             return flight
         else: 
             clear_console()
-            print("Your input: " + str(flight_id) + "\nInvalid flight ID, please try again.\n")
+            print(header)
+            flights = display_flights(columns=columns, pilot=pilot, is_future=is_future, departure_date=departure_date, exclude_status=exclude_status)
+            print("\nYour input: " + str(flight_id) + "\nInvalid flight ID, please try again.")
 
-
-# helper function to retrive a departure time from the user. Used for updating the departure time of existing flights, 
-# and when scheduling new flights. Ensures the departrue time is not in the past and is in the accepted format before 
+# helper function to retrive a departure time from the user. Used for updating the departure time of existing flights
+# and when scheduling new flights. Ensures the departure time is not in the past and is in the accepted format before 
 # returning the departure time as a datetime object. 
 def get_departure_time(flight=None, airport=None, existing_flight=None):
     while True:
@@ -57,9 +60,6 @@ def get_departure_time(flight=None, airport=None, existing_flight=None):
         print(f"Departure time set to: {departure_time}\n")
         return departure_time
 
-
-
-
 # helper function to retrieve an airport from the user. Calls 'display_airports_and_destinations' to display the
 # available airports, then checks the airport exists and is valid before returning the airport details as a tuple. 
 def select_airport(departure_airport_id=None):
@@ -67,8 +67,10 @@ def select_airport(departure_airport_id=None):
         airports = display_airports_and_destinations(departure_airport_id)
         if not departure_airport_id:
             airport_id = input(f"\n===Choose Departure Airport===\nPlease enter the Airport ID of the airport to depart from: ")
-        else: airport_id = input(f"\n===Choose Arrival Airport===\nPlease enter the Airport ID of the arrival airport: ")
-        try: airport_id = int(airport_id)
+        else: 
+            airport_id = input(f"\n===Choose Arrival Airport===\nPlease enter the Airport ID of the arrival airport: ")
+        try: 
+            airport_id = int(airport_id)
         except ValueError:
             clear_console()
             print("Your input: " + str(airport_id) + "\nInvalid input. Please enter a valid Airport ID.\n")
@@ -81,7 +83,6 @@ def select_airport(departure_airport_id=None):
         else: 
             clear_console()
             print("Your input: " + str(airport_id) + "\nInvalid Airport ID, please try again.\n")
-
 
 # helper function to generate a random flight number. Chooses a random airline code from 
 # a list and concatentates with a random 3 or 4 digit number to create a flight number. Checks the
@@ -100,8 +101,8 @@ def generate_flight_number():
         finally:
             conn.close()
 
-# helper function to retieve the duration of a flight from the user. Checks that the provided hours and minutes are positive integers,
-# and total less than 36 hours. Also checks that the value provided for minutes is less than 60. Retuns the duration as a timedelta object. 
+# helper function to retieve the duration of a flight from the user. Checks that the provided hours and minutes are positive integers
+# and total less than 36 hours. Also checks that the value provided for minutes is less than 60. Returns the duration as a timedelta object. 
 # This is used when scheduling a flight to calculate the arrival time.
 def get_flight_duration():
     print("\nTo enter the duration of the flight, please enter the hours first, then the minutes. The arrival time will be scheduled accordingly.")
@@ -127,92 +128,81 @@ def get_flight_duration():
             clear_console()
             print("Invalid input. Please enter numbers only.")
 
+# helper function to generate a query string to retrieve flights data from the database. Can be called with various arguments to make the
+# function reusable.
 def build_flights_query(columns=None, pilot=None, is_future=None, departure_date=None, exclude_status=None, status=None, destination=None):
     columns_str = ", ".join(columns)
-    query = f"""
+    query = f'''
         SELECT {columns_str}
         FROM flights AS f
         JOIN airports AS departure_airport ON f.departure_airport_id = departure_airport.airport_id
         JOIN airports AS arrival_airport ON f.arrival_airport_id = arrival_airport.airport_id
         JOIN destinations AS d ON arrival_airport.destination_id = d.destination_id
         WHERE 1=1
-    """
+    '''
     params=[]
-
     if is_future:
         query += " AND f.departure_time >= CURRENT_TIMESTAMP"
-
     if departure_date:
         query += " AND DATE(f.departure_time) = ?"
         params.append(departure_date)
-
     if pilot:
         query += " AND f.pilot_id = ?"
         params.append(pilot)
-
     if exclude_status:
         query += " AND f.status != ?"
         params.append(exclude_status)
-    
     if status:
         query += " AND f.status = ?"
         params.append(status)
-
     if destination:
         query += " AND (d.city LIKE ? OR d.country LIKE ?)"
         params.extend([f"%{destination}%", f"%{destination}%"])
-
     return query, params
 
-def fetch_flights(query, params):
-    conn = sqlite3.connect('flight_management')
-    flights = conn.execute(query, params).fetchall()
-    conn.close()
-    return flights
-# helper function to display a list of all flights. Accpets a list of columns to display; if None, displays all columns.
-# Accepts other arguments to make the function resuable, allowing relevant columns to be displayed. 
+# helper function to display a list of flights in a readable format. Accpets a list of columns to display; if None, displays the defined columns.
+# Accepts other arguments to make the function resuable, allowing relevant data to be displayed. Returns retrieved flights as a list of tuples to
+# be used by functions which call this one.
 def display_flights(columns=None, pilot=None, is_future=None, departure_date=None, exclude_status=None, status=None, destination=None):
-
     if not columns:
         columns = [
             "f.flight_id", "f.flight_number", "departure_airport.airport_name AS departure_airport", "f.departure_time", "arrival_airport.airport_name AS arrival_airport", "f.arrival_time"
         ]
-    
     query, params = build_flights_query(columns, pilot, is_future, departure_date, exclude_status, status, destination)
-    flights = fetch_flights(query, params)
+    conn = sqlite3.connect('flight_management')
+    flights = conn.execute(query, params).fetchall()
+    conn.close()
     if not flights: 
         print("\nNo matching flights found.")
         return None
-    
     column_names = format_column_names(columns)
     for flight in flights: 
         print(" | ".join(f"{column_names[i]}: {flight[i]}" for i in range(len(columns))))
-    
         print("-" * 50)
     return flights
 
+# helper funtion to format the column names passed into, or defined in, 'display_flights' to enable the column names to be dynamically
+# formatted so they can be displayed in a readable format.
 def format_column_names(columns):
     formatted_names = []
     for column in columns:
-        # Use alias if present
+        # use alias for column name if present
         if " AS " in column.upper():
             name = column.split(" AS ")[-1]
+        # remove table alias if present
         elif "." in column:
             name = column.split(".")[-1]
         else:
             name = column
-
-        # Special case for combining city and country as 'Destination'
+        # special case to display city and country as destinations
         if 'city' in name.lower(): 
             name = "Destination City"
-
         if 'country' in name.lower():
             name = "Destination Country"
 
-        # Clean formatting
+        # remove underscores from column names and capitalise
         name = name.replace("_", " ").title()
+        # capitalise 'id'
         name = name.replace(" Id", " ID")
         formatted_names.append(name)
     return formatted_names
-
-    

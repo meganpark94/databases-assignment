@@ -1,9 +1,8 @@
-# helper function to prompt the user to confirm that they wish to assign a pilot to a flight
-# when the flight already has a pilot assigned.
 import sqlite3
 from menu import clear_console
 
-# helper functionto
+# helper function to prompt the user to confirm that they wish to assign a pilot to a flight
+# when the flight already has a pilot assigned.
 def confirm_pilot_update(current_pilot_name, current_pilot_id, flight_number):
     clear_console()
     while True:
@@ -25,34 +24,37 @@ def confirm_pilot_update(current_pilot_name, current_pilot_id, flight_number):
 # to ensure only the relevant piolots are displayed. Ensures the pilot_id exists and meets the criteria before
 # returning the pilot id and name
 def select_pilot(only_available=None, departure_time=None, arrival_time=None, flight_number=None, action=None):
+    if departure_time:
+        header = "==========All Pilots=========="
+    else:
+        header = "==========All Pilots=========="
     clear_console()
+    print(header)
+    pilots = display_pilots(only_available, departure_time, arrival_time)
     while True:
-        
-        if departure_time:
-            print("==========Available Pilots==========\n")
-        else:
-            print("==========All Pilots==========\n")
-        pilots = display_pilots(only_available=only_available, departure_time=departure_time, arrival_time=arrival_time)
         if departure_time:
             pilot_id = input(f"\nPlease enter the pilot_id of the pilot you'd like to assign to flight {flight_number}: ")
         if action:
             pilot_id = input(f"\nPlease enter the pilot_id of the pilot you'd like to {action}: ")
-       
         try: 
             pilot_id = int(pilot_id)
         except ValueError:
             clear_console()
-            print(f"Your input: {pilot_id}\nInvalid input. Please enter a valid pilot ID.")
+            print(header)
+            pilots = display_pilots(only_available, departure_time, arrival_time)
+            print(f"\nYour input: {pilot_id}\nInvalid input. Please enter a valid pilot ID.")
             continue
         pilot_to_assign = next((pilot for pilot in pilots if pilot[0] == pilot_id), None)
         if pilot_to_assign:
             return pilot_id, f"{pilot_to_assign[1]} { pilot_to_assign[2]}"
         else: 
             clear_console()
-            print(f"Your input: {str(pilot_id)}\nInvalid pilot ID, please try again.")
+            print(header)
+            pilots = display_pilots(only_available, departure_time, arrival_time)
+            print(f"\nYour input: {str(pilot_id)}\nInvalid pilot ID, please try again.")
 
 
-# helper function to retrive the pilot assigned to a specific flight. Returns the id and name of the 
+# helper function to retrieve the pilot assigned to a specific flight. Returns the id and name of the 
 # pilot currently assigned to a flight. If no pilot is yet assigned, returns None. 
 def get_current_pilot(flight):
     current_pilot_id = flight[2]
@@ -68,51 +70,54 @@ def get_current_pilot(flight):
     return current_pilot_id, "Unknown Pilot."
 
 
-# helper function to display a list of all pilots. Accepts arguments to make the function resuable
+# helper function to display a list of all pilots. Accepts arguments to make the function resuable.
+# When 'only_available' is True, only displays pilots who are not already assigned to a flight.
 def display_pilots(only_available=None, departure_time=None, arrival_time=None):
     conn = sqlite3.connect('flight_management')
-    query = "SELECT pilot_id, first_name, last_name FROM pilots"
+    query = "SELECT pilot_id, first_name, last_name FROM pilots "
     params = ()
     if only_available:
-        query += ''' WHERE pilot_id NOT IN (
+        query += ''' 
+            WHERE pilot_id NOT IN (
             SELECT DISTINCT pilot_id FROM flights 
             WHERE pilot_id IS NOT NULL AND (
-            (departure_time <= ? AND arrival_time >= ?)  -- Overlapping departure
+            (departure_time <= ? AND arrival_time >= ?) 
             OR
-            (departure_time <= ? AND arrival_time >= ?)  -- Overlapping arrival
+            (departure_time <= ? AND arrival_time >= ?) 
             OR
-            (departure_time >= ? AND arrival_time <= ?)  -- Fully inside another flight
+            (departure_time >= ? AND arrival_time <= ?)  
             )
-            )'''
+            )
+        '''
         params = (departure_time, departure_time, arrival_time, arrival_time, departure_time, arrival_time)
-    
-
     pilots = conn.execute(query, params).fetchall()
     conn.close()
-
     if not pilots: 
         print("\nNo matching pilots found.")
         return None
-    
     for pilot_id, first_name, last_name in pilots: 
          print(f"ID: {pilot_id} | Name: {first_name} {last_name}")
-    
     return pilots
 
+# helper function to get the name of a pilot from the user. Used to add a pilot to the system and to update a pilot's name. 
+# Ensures the provided first_name and last_name are each less than or equal to 30 characters and not empty strings. 
 def get_name():
     while True:
         first_name = input("Please enter the pilot's first name: ").strip()
         last_name = input("Please enter the pilot's surname: ").strip()
         if len(first_name) > 30 or len(last_name) > 30: 
             clear_console()
-            print(f"Your input: First name - {first_name} Surname - {last_name}\n Pilot's first name and last name must not exceed 30 characters each.")
+            print(f"Your input: First name - {first_name} Surname - {last_name}\nPilot's first name and last name must not exceed 30 characters each.")
         elif not first_name or not last_name:
             clear_console()
-            print(f"Your input: First name - {first_name} Surname - {last_name}\n You must provide a value for the pilot's first name and surname.")
+            print(f"Your input: First name - {first_name} Surname - {last_name}\nYou must provide a value for the pilot's first name and surname.")
         else: 
             clear_console()
             return first_name, last_name  
 
+# helper function to get the license number of a pilot from the user. Used to add a pilot to the system and to update a pilot's license number. 
+# Ensures the provided license number is less than or equal to 20 characters, not an empty string and does not already exist
+# in the 'pilots' table.
 def get_license_number(pilot_name):
     while True:
         license_number = input(f"Please enter {pilot_name}'s license number (e.g. LIC667788): ").strip()

@@ -7,17 +7,16 @@ from pilots_helpers import confirm_pilot_update, get_current_pilot, get_license_
 
 def display_pilots_menu(previous_menu):
     def return_to_pilots_menu():
-        return_to_pilots_menu(previous_menu)
+        display_pilots_menu(previous_menu)
     pilots_menu = {
         "heading": "=== Pilot Scheduling & Information Menu ===",
-    "1": ("Assign a pilot to a flight", assign_pilot_to_flight),
-    "2": ("View a pilot's schdule", view_assigned_flights),
-    "3": ("Add a new pilot to the system", add_pilot),
-    "4": ("Delete a pilot from the system", delete_pilot),
-    "5": ("Update a pilot's details", lambda: update_details_menu(return_to_pilots_menu)),
-    "6": ("View the number of pilots that have flown to a given destination", view_pilots_for_destination),
-    "7": ("Return to Previous Menu", lambda: create_menu(previous_menu)),
-}
+        "1": ("Assign a pilot to a flight", assign_pilot_to_flight),
+        "2": ("View a pilot's schdule", view_assigned_flights),
+        "3": ("Add a new pilot to the system", add_pilot),
+        "4": ("Delete a pilot from the system", delete_pilot),
+        "5": ("Update a pilot's details", lambda: update_details_menu(return_to_pilots_menu)),
+        "6": ("Return to Previous Menu", lambda: create_menu(previous_menu)),
+    }
     create_menu(pilots_menu, previous_menu)
 
 # function to assign a pilot to a flight. Calls 'get_flight' to retrive a valid flight from the user, ensuring
@@ -33,13 +32,13 @@ def assign_pilot_to_flight():
         update_assigned_pilot = confirm_pilot_update(current_pilot_name, current_pilot_id, flight_number)  
         if not update_assigned_pilot:
             return      
-    pilot_id, pilot_name = select_pilot(departure_time, arrival_time, flight_number, only_available=True)
+    pilot_id, pilot_name = select_pilot(only_available=True, departure_time=departure_time, arrival_time=arrival_time, flight_number=flight_number)
     conn = sqlite3.connect('flight_management')
     conn.execute("UPDATE flights SET pilot_id = ? WHERE flight_id = ?", (pilot_id, flight_id) )
     conn.commit()
     conn.close()
     clear_console()
-    print(f"Pilot {pilot_name} has been assigned to flight {flight_number}.\n")
+    print(f"Pilot {pilot_name} has been assigned to flight {flight_number}.")
 
 def view_schedule():
     print("x")
@@ -49,7 +48,7 @@ def view_schedule():
 # flights assigned to that pilot. 
 def view_assigned_flights():
     clear_console()
-    pilot_id, pilot_name = select_pilot(action="view assigned flights for: ")
+    pilot_id, pilot_name = select_pilot(action="view assigned flights for")
     clear_console()
     print(f"========== Flights assigned to {pilot_name} ==========\n")
     columns = [
@@ -61,7 +60,6 @@ def view_assigned_flights():
         "f.status"
     ]
     display_flights(columns, pilot=pilot_id)
-
 # function to add a new pilot to the Flight Management System. Calls helper functions to receive a 
 # valid name and license number from the user, then queries the database to check a pilot with the 
 # provided license number does not already exist. If the licesnse number is unique, the pilot's details
@@ -125,13 +123,11 @@ def delete_pilot():
 # selection. Accepts the previous_menu to allow the user to return to the 'Pilot Scheduling & Information Menu'. 
 # Calls 'create_menu' to print the menu and handle user input. 
 def update_details_menu(previous_menu):
-    def return_to_pilots_menu():
-        display_pilots_menu(previous_menu)
     update_details_menu = {
         "heading": "=== Update a pilot's details ===",
-    "1": ("Update the pilot's name", lambda: update_details("name", return_to_pilots_menu)),
-    "2": ("Update the pilot's license number", lambda: update_details("license number", return_to_pilots_menu)),
-    "3": ("Cancel", lambda: previous_menu()),
+        "1": ("Update the pilot's name", lambda: update_details("name", previous_menu)),
+        "2": ("Update the pilot's license number", lambda: update_details("license number", previous_menu)),
+        "3": ("Cancel", lambda: previous_menu()),
     }
     clear_console()
     create_menu(update_details_menu, previous_menu)
@@ -172,6 +168,4 @@ def update_details(field, return_to_pilots_menu):
     input("\nPress Enter to return to the Pilot Scheduling & Information Menu")
     return_to_pilots_menu()
 
-def view_pilots_for_destination():
-    print("x")
 

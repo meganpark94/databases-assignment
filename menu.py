@@ -37,7 +37,7 @@ def create_menu(menu, previous_menu=None):
                 break
         else:
             clear_console() 
-            print(choice + "\nInvalid choice.\n")
+            print(f"Your input: {choice}\nInvalid choice.")
         
 # function to clear the close and print an exit message. Called when the user selects
 # 'Exit' from the main menu
