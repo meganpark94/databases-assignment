@@ -11,7 +11,7 @@ def clear_console():
         os.system('clear')
 
 # function to display a menu - accepts a dictionary and prints the heading, the 
-# numbers of the menu items and the name of the menu items.
+# numbers of the menu items and the name of the menu items
 def display_menu(menu):
     print(f"\n{menu['heading']}\n")
     for key, value in menu.items():
@@ -24,8 +24,8 @@ def display_menu(menu):
 # menu dictionary, where keys are menu option numbers (as strings) and values are tuples 
 # containing a menu description (str) and a function to execute. Optional paramemter - 
 # a previous_menu dictionary, to allow navigation back to the previous menu. If no 
-# previous_menu is passed as an argument (previous_menu==none) the loop will break 
-# after execution, allowing the user to exit the program. 
+# previous_menu is passed as an argument (previous_menu==None) the loop will break 
+# after execution, allowing the user to exit the program
 def create_menu(menu, previous_menu=None):
     clear_console()
     while True:
@@ -39,7 +39,7 @@ def create_menu(menu, previous_menu=None):
             clear_console() 
             print(f"Your input: {choice}\nInvalid choice.")
         
-# function to clear the close and print an exit message. Called when the user selects
+# function to clear the console and print an exit message. Called when the user selects
 # 'Exit' from the main menu
 def exit_management_system():
     clear_console()

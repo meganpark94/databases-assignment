@@ -16,6 +16,7 @@ main_menu = {
 # call 'update_flight_status' to update any flights with a departure date in the past and a status of 
 # 'scheduled' to have a status of 'departed'
 update_flight_status()
-#call 'create_menu' to display start the program - displays the main menu and handles user choices
+
+# call 'create_menu' to start the program - displays the main menu and handles user choices
 create_menu(main_menu)
 

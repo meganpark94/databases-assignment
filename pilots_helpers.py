@@ -55,7 +55,7 @@ def select_pilot(only_available=None, departure_time=None, arrival_time=None, fl
 
 
 # helper function to retrieve the pilot assigned to a specific flight. Returns the id and name of the 
-# pilot currently assigned to a flight. If no pilot is yet assigned, returns None. 
+# pilot currently assigned to a flight. If no pilot is yet assigned, returns None
 def get_current_pilot(flight):
     current_pilot_id = flight[2]
     if not current_pilot_id:
@@ -71,7 +71,7 @@ def get_current_pilot(flight):
 
 
 # helper function to display a list of all pilots. Accepts arguments to make the function resuable.
-# When 'only_available' is True, only displays pilots who are not already assigned to a flight.
+# When 'only_available' is True, only displays pilots who are not already assigned to a flight at the time
 def display_pilots(only_available=None, departure_time=None, arrival_time=None):
     conn = sqlite3.connect('flight_management')
     query = "SELECT pilot_id, first_name, last_name FROM pilots "
@@ -100,7 +100,7 @@ def display_pilots(only_available=None, departure_time=None, arrival_time=None):
     return pilots
 
 # helper function to get the name of a pilot from the user. Used to add a pilot to the system and to update a pilot's name. 
-# Ensures the provided first_name and last_name are each less than or equal to 30 characters and not empty strings. 
+# Ensures the provided first_name and last_name are each less than or equal to 30 characters and not empty strings
 def get_name():
     while True:
         first_name = input("Please enter the pilot's first name: ").strip()
@@ -117,7 +117,7 @@ def get_name():
 
 # helper function to get the license number of a pilot from the user. Used to add a pilot to the system and to update a pilot's license number. 
 # Ensures the provided license number is less than or equal to 20 characters, not an empty string and does not already exist
-# in the 'pilots' table.
+# in the 'pilots' table
 def get_license_number(pilot_name):
     while True:
         license_number = input(f"Please enter {pilot_name}'s license number (e.g. LIC667788): ").strip()

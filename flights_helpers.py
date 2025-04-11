@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 import random
 import sqlite3
-from destinations import display_airports_and_destinations
+
+from destinations_helpers import display_airports_and_destinations
 from menu import clear_console
 
 date_format = "%Y-%m-%d %H:%M:%S"
@@ -9,7 +10,7 @@ date_format = "%Y-%m-%d %H:%M:%S"
 # helper function to fetch the flight details of a flight. Calls 'display_flights' with the provided
 # arguments, making the function reusable. Asks the user to input the ID of the flight they want to update,
 # verifies it's a valid flight_id and that it matches the criteria passed in (if provided), then returns the
-# flight details as a tuple.
+# flight details as a tuple
 def get_flight(type, columns=None, pilot=None, is_future=None, departure_date=None, exclude_status=None):
     clear_console()
     if is_future:
@@ -39,7 +40,7 @@ def get_flight(type, columns=None, pilot=None, is_future=None, departure_date=No
 
 # helper function to retrive a departure time from the user. Used for updating the departure time of existing flights
 # and when scheduling new flights. Ensures the departure time is not in the past and is in the accepted format before 
-# returning the departure time as a datetime object. 
+# returning the departure time as a datetime object
 def get_departure_time(flight=None, airport=None, existing_flight=None):
     while True:
         if existing_flight:
@@ -61,7 +62,7 @@ def get_departure_time(flight=None, airport=None, existing_flight=None):
         return departure_time
 
 # helper function to retrieve an airport from the user. Calls 'display_airports_and_destinations' to display the
-# available airports, then checks the airport exists and is valid before returning the airport details as a tuple. 
+# available airports, then checks the airport exists and is valid before returning the airport details as a tuple 
 def select_airport(departure_airport_id=None):
     while True:
         airports = display_airports_and_destinations(departure_airport_id)
@@ -86,7 +87,7 @@ def select_airport(departure_airport_id=None):
 
 # helper function to generate a random flight number. Chooses a random airline code from 
 # a list and concatentates with a random 3 or 4 digit number to create a flight number. Checks the
-# flight number does not already exist in the database then returns it as a string. 
+# flight number does not already exist in the database then returns it as a string
 def generate_flight_number():
     airline_codes = ["NY", "LA", "LD", "TP", "BC", "KJ", "IB", "EN"]
     flight_number = random.choice(airline_codes) + str(random.randint(100,9999))
@@ -101,9 +102,9 @@ def generate_flight_number():
         finally:
             conn.close()
 
-# helper function to retieve the duration of a flight from the user. Checks that the provided hours and minutes are positive integers
+# helper function to retrieve the duration of a flight from the user. Checks that the provided hours and minutes are positive integers
 # and total less than 36 hours. Also checks that the value provided for minutes is less than 60. Returns the duration as a timedelta object. 
-# This is used when scheduling a flight to calculate the arrival time.
+# This is used when scheduling a flight to calculate the arrival time
 def get_flight_duration():
     print("\nTo enter the duration of the flight, please enter the hours first, then the minutes. The arrival time will be scheduled accordingly.")
     while True:
@@ -129,7 +130,7 @@ def get_flight_duration():
             print("Invalid input. Please enter numbers only.")
 
 # helper function to generate a query string to retrieve flights data from the database. Can be called with various arguments to make the
-# function reusable.
+# function reusable
 def build_flights_query(columns=None, pilot=None, is_future=None, departure_date=None, exclude_status=None, status=None, destination=None):
     columns_str = ", ".join(columns)
     query = f'''
@@ -162,7 +163,7 @@ def build_flights_query(columns=None, pilot=None, is_future=None, departure_date
 
 # helper function to display a list of flights in a readable format. Accpets a list of columns to display; if None, displays the defined columns.
 # Accepts other arguments to make the function resuable, allowing relevant data to be displayed. Returns retrieved flights as a list of tuples to
-# be used by functions which call this one.
+# be used by functions which call this one
 def display_flights(columns=None, pilot=None, is_future=None, departure_date=None, exclude_status=None, status=None, destination=None):
     if not columns:
         columns = [
@@ -182,7 +183,7 @@ def display_flights(columns=None, pilot=None, is_future=None, departure_date=Non
     return flights
 
 # helper funtion to format the column names passed into, or defined in, 'display_flights' to enable the column names to be dynamically
-# formatted so they can be displayed in a readable format.
+# formatted so they can be displayed in a readable format
 def format_column_names(columns):
     formatted_names = []
     for column in columns:

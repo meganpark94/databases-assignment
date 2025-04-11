@@ -4,7 +4,7 @@ from menu import clear_console, create_menu
 
 # function to display the top-level 'destinations' menu - 'Destination Management Menu' - and handle user 
 # selection. Accepts the previous_menu to allow the user to return to the main menu. Calls 'create_menu' 
-# to print the menu and handle user input. 
+# to print the menu and handle user input
 def display_destinations_menu(previous_menu):
     destinations_menu = {
     "heading": "=== Destination Management Menu ===",
@@ -19,7 +19,7 @@ def display_destinations_menu(previous_menu):
 
 # function to display the total number of departing or arriving flights from or to an airport. Accepts the
 # 'type' of flight as an argument(departing or arriving) then sets the 'airport_id_type' accordingly. Fetches the
-# number of flights to or from each airport and displays the results in a readable format.
+# number of flights to or from each airport and displays the results in a readable format
 def display_airport_flight_count(type):
     clear_console()
     if type not in ("arriving", "departing"):
@@ -50,7 +50,7 @@ def display_airport_flight_count(type):
 # valid destination from the user, then calls 'get_airport_details' to retrieve a valid airport_name and 
 # IATA code for the new airport from the user. Checks that an airport with the provided IATA code does not already
 # exist - if it does, prints a message to inform the user that a duplicate IATA code cannot be used and returns.
-# Otherwise, inserts the airport details into the database and displays a success message. 
+# Otherwise, inserts the airport details into the database and displays a success message
 def add_airport():
     clear_console()
     print("========== Add an airport to the Flight Management System ===========")
@@ -64,14 +64,12 @@ def add_airport():
         print(f"\nAn airport with IATA code '{iata_code}' already exists. Unable to add a duplicate entry to the Flight Management System.")
         conn.close()
         return
-    cursor.execute(
-        "INSERT INTO airports (airport_name, iata_code, destination_id) VALUES (?, ?, ?)",
-        (airport_name, iata_code, destination_id)
-    )
+    cursor.execute("INSERT INTO airports (airport_name, iata_code, destination_id) VALUES (?, ?, ?)",(airport_name, iata_code, destination_id))
     conn.commit()
     conn.close() 
     print(f"Airport '{airport_name}' ({iata_code}) added successfully.")
 
+# function to fetch and display the number of airports in each country in a readable format
 def display_country_airport_count():
     clear_console()
     print("========== View the number of airports in each country ==========")
@@ -92,30 +90,4 @@ def display_country_airport_count():
         print(f"Country: {country} | Number of airports: {airport_count}")
         print("-" * 50)
 
-def display_airports_and_destinations(departure_airport_id=None):
-    conn = sqlite3.connect('flight_management')
-    cursor = conn.cursor()
-    query = '''
-        SELECT a.airport_id, a.airport_name, a.iata_code, d.city, d.country 
-        FROM airports AS a
-        JOIN destinations AS d ON a.destination_id = d.destination_id
-    '''
-    params = ()
-    if departure_airport_id:
-        query += " WHERE a.airport_id != ?"
-        params = (departure_airport_id,)
-    
-    query += " ORDER BY d.country, d.city, a.airport_name"
-    cursor.execute(query, params)
-    airports = cursor.fetchall()
-    conn.close()
 
-    if not airports:
-        print("\nNo airports found.")
-        return None
-    clear_console()
-    print("==========Airports==========")
-    for airport_id, airport_name, iata_code, city, country in airports:
-        print(f"Airport ID: {airport_id} | Airport: {airport_name} | IATA code: {iata_code} | Destination: {city}, {country}")
-        print("-" * 50)
-    return airports

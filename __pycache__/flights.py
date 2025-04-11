@@ -56,10 +56,12 @@ def change_departure_time():
     new_arrival_time = datetime.strptime(old_arrival_time, date_format) + flight_duration
     conn = sqlite3.connect('flight_management')
     cursor = conn.cursor()
-    cursor.execute('''UPDATE flights
+    cursor.execute('''
+        UPDATE flights
         SET departure_time = ?, arrival_time = ?
         WHERE flight_id = ?
-    ''', (new_departure_time, new_arrival_time, flight_id))    
+    ''', (new_departure_time, new_arrival_time, flight_id)
+    )    
     conn.commit()
     conn.close()
     flight_number = flight_to_update[1]
@@ -89,10 +91,12 @@ def cancel_a_flight():
 
     conn = sqlite3.connect('flight_management')
     cursor = conn.cursor()
-    cursor.execute('''UPDATE flights
+    cursor.execute('''
+        UPDATE flights
         SET status = ?
         WHERE flight_id = ?
-    ''', ("cancelled", flight_id))    
+        ''', ("cancelled", flight_id)
+    )    
     conn.commit()
     conn.close()
     clear_console()
@@ -113,10 +117,12 @@ def update_flight_destination():
     new_airport_id = new_destination[0]
     conn = sqlite3.connect('flight_management')
     cursor = conn.cursor()
-    cursor.execute('''UPDATE flights
+    cursor.execute('''
+        UPDATE flights
         SET arrival_airport_id = ?
         WHERE flight_id = ?
-    ''', (new_airport_id, flight_id))    
+    ''', (new_airport_id, flight_id)
+    )    
     conn.commit()
     conn.close()
     flight_number = flight_to_update[1]
@@ -141,10 +147,10 @@ def schedule_a_flight():
     conn = sqlite3.connect('flight_management')
     cursor = conn.cursor()
     flight_number = generate_flight_number()
-    cursor.execute('''INSERT INTO flights (flight_number, departure_airport_id, arrival_airport_id, departure_time, arrival_time)
-                      VALUES (?, ?, ?, ?, ?)''',
-                   (flight_number, departure_airport_id, arrival_airport_id, departure_time,
-                    arrival_time))
+    cursor.execute('''
+        INSERT INTO flights (flight_number, departure_airport_id, arrival_airport_id, departure_time, arrival_time)
+        VALUES (?, ?, ?, ?, ?)''', (flight_number, departure_airport_id, arrival_airport_id, departure_time, arrival_time)
+    )
     conn.commit()
     conn.close()
 
