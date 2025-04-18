@@ -1,1 +1,2 @@
-# databases-assignment
+# Flight Management System
+To interact with the Flight Management System, open 'main.py' and click the 'run' button to start the program. Queries to create a trigger and insert sample data into the database have been commented out to prevent errors when the program runs. 

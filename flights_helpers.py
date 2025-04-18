@@ -5,20 +5,23 @@ import sqlite3
 from destinations_helpers import display_airports_and_destinations
 from menu import clear_console
 
-date_format = "%Y-%m-%d %H:%M:%S"
+date_format = "%d-%m-%Y %H:%M"
+db_date_format = "%Y-%m-%d %H:%M:%S"
 
 # helper function to fetch the flight details of a flight. Calls 'display_flights' with the provided
 # arguments, making the function reusable. Asks the user to input the ID of the flight they want to update,
 # verifies it's a valid flight_id and that it matches the criteria passed in (if provided), then returns the
 # flight details as a tuple
-def get_flight(type, columns=None, pilot=None, is_future=None, departure_date=None, exclude_status=None):
+def get_flight(type, deparature_time_index=None, arrival_time_index=None, columns=None, pilot=None, is_future=None, exclude_status=None):
     clear_console()
     if is_future:
         header = "========== Upcoming Flights=========="
     else: 
         header = "==========Flights=========="
     print(header)
-    flights = display_flights(columns=columns, pilot=pilot, is_future=is_future, departure_date=departure_date, exclude_status=exclude_status)
+    flights = display_flights(
+        departure_time_index=deparature_time_index, arrival_time_index=arrival_time_index, columns=columns, pilot=pilot, is_future=is_future, exclude_status=exclude_status
+        )
     while True:
         flight_id = input(f"\nPlease enter the Flight ID of the flight you'd like to {type}: ")
         try: 
@@ -26,7 +29,9 @@ def get_flight(type, columns=None, pilot=None, is_future=None, departure_date=No
         except ValueError:
             clear_console()
             print(header)
-            flights = display_flights(columns=columns, pilot=pilot, is_future=is_future, departure_date=departure_date, exclude_status=exclude_status)
+            flights = display_flights(
+                departure_time_index=deparature_time_index, arrival_time_index=arrival_time_index, columns=columns, pilot=pilot, is_future=is_future, exclude_status=exclude_status
+                )
             print("\nYour input: " + str(flight_id) + "\nInvalid input. Please enter a valid Flight ID.")
             continue
         flight = next((flight for flight in flights if flight[0] == flight_id), None)
@@ -35,23 +40,25 @@ def get_flight(type, columns=None, pilot=None, is_future=None, departure_date=No
         else: 
             clear_console()
             print(header)
-            flights = display_flights(columns=columns, pilot=pilot, is_future=is_future, departure_date=departure_date, exclude_status=exclude_status)
+            flights = display_flights(
+                departure_time_index=deparature_time_index, arrival_time_index=arrival_time_index, columns=columns, pilot=pilot, is_future=is_future, exclude_status=exclude_status
+                )
             print("\nYour input: " + str(flight_id) + "\nInvalid flight ID, please try again.")
 
-# helper function to retrive a departure time from the user. Used for updating the departure time of existing flights
+# helper function to retrieve a departure time from the user. Used for updating the departure time of existing flights
 # and when scheduling new flights. Ensures the departure time is not in the past and is in the accepted format before 
 # returning the departure time as a datetime object
 def get_departure_time(flight=None, airport=None, existing_flight=None):
     while True:
         if existing_flight:
-            departure_time = input(f"\nPlease enter a new departure time for flight {flight[1]} (YYYY-MM-DD HH:MM:SS): ")
+            departure_time = input(f"\nPlease enter a new departure date and time for flight {flight[1]} (DD-MM-YYYY HH:MM): ")
         else: 
-            departure_time = input(f"\nPlease enter the departure time for flight from {airport[1]} (YYYY-MM-DD HH:MM:SS): ")
+            departure_time = input(f"\nPlease enter the date and departure time for flight from {airport[1]} (DD-MM-YYYY HH:MM): ")
         try: 
-            departure_time = datetime.strptime(departure_time, date_format)
+            departure_time = datetime.strptime(departure_time.strip(), date_format)
         except ValueError:
             clear_console()
-            print("Your input: " + str(departure_time) + "\nInvalid departure time format. Please use the format 'YYYY-MM-DD HH:MM:SS'.")
+            print("Your input: " + str(departure_time) + "\nInvalid departure time format. Please use the format 'DD-MM-YYYY HH:MM'.")
             continue
         if departure_time <= datetime.now():
             clear_console()
@@ -60,7 +67,7 @@ def get_departure_time(flight=None, airport=None, existing_flight=None):
         clear_console()
         print(f"Departure time set to: {departure_time}\n")
         return departure_time
-
+    
 # helper function to retrieve an airport from the user. Calls 'display_airports_and_destinations' to display the
 # available airports, then checks the airport exists and is valid before returning the airport details as a tuple 
 def select_airport(departure_airport_id=None):
@@ -131,7 +138,7 @@ def get_flight_duration():
 
 # helper function to generate a query string to retrieve flights data from the database. Can be called with various arguments to make the
 # function reusable
-def build_flights_query(columns=None, pilot=None, is_future=None, departure_date=None, exclude_status=None, status=None, destination=None):
+def build_flights_query(columns=None, pilot=None, is_future=None, exclude_status=None, status=None, destination=None):
     columns_str = ", ".join(columns)
     query = f'''
         SELECT {columns_str}
@@ -144,9 +151,6 @@ def build_flights_query(columns=None, pilot=None, is_future=None, departure_date
     params=[]
     if is_future:
         query += " AND f.departure_time >= CURRENT_TIMESTAMP"
-    if departure_date:
-        query += " AND DATE(f.departure_time) = ?"
-        params.append(departure_date)
     if pilot:
         query += " AND f.pilot_id = ?"
         params.append(pilot)
@@ -162,14 +166,17 @@ def build_flights_query(columns=None, pilot=None, is_future=None, departure_date
     return query, params
 
 # helper function to display a list of flights in a readable format. Accpets a list of columns to display; if None, displays the defined columns.
-# Accepts other arguments to make the function resuable, allowing relevant data to be displayed. Returns retrieved flights as a list of tuples to
-# be used by functions which call this one
-def display_flights(columns=None, pilot=None, is_future=None, departure_date=None, exclude_status=None, status=None, destination=None):
+# Accepts an index for departure_time and arrival_time columns which, if not columns, is set to correspend with the defined columns. Passes the indicies to 
+# 'format_column_names' to display the date and time in a readable format. Accepts other arguments to make the function resuable, allowing relevant data 
+# to be displayed. Returns retrieved flights as a list of tuples to be used by functions which call this one
+def display_flights(departure_time_index=None, arrival_time_index=None, columns=None, pilot=None, is_future=None, exclude_status=None, status=None, destination=None):
     if not columns:
         columns = [
             "f.flight_id", "f.flight_number", "departure_airport.airport_name AS departure_airport", "f.departure_time", "arrival_airport.airport_name AS arrival_airport", "f.arrival_time"
         ]
-    query, params = build_flights_query(columns, pilot, is_future, departure_date, exclude_status, status, destination)
+        departure_time_index=3
+        arrival_time_index=5
+    query, params = build_flights_query(columns, pilot, is_future, exclude_status, status, destination)
     conn = sqlite3.connect('flight_management')
     flights = conn.execute(query, params).fetchall()
     conn.close()
@@ -178,6 +185,7 @@ def display_flights(columns=None, pilot=None, is_future=None, departure_date=Non
         return None
     column_names = format_column_names(columns)
     for flight in flights: 
+        flight = format_flight_times(flight, departure_time_index, arrival_time_index)
         print(" | ".join(f"{column_names[i]}: {flight[i]}" for i in range(len(columns))))
         print("-" * 50)
     return flights
@@ -200,10 +208,24 @@ def format_column_names(columns):
             name = "Destination City"
         if 'country' in name.lower():
             name = "Destination Country"
-
         # remove underscores from column names and capitalise
         name = name.replace("_", " ").title()
         # capitalise 'id'
         name = name.replace(" Id", " ID")
         formatted_names.append(name)
     return formatted_names
+
+# helper function to convert the departure and arrival time of flights to a user-friendly format. 
+# Acccpets the indicies of the flight list where the departure and arrial time are located.
+def format_flight_times(flight, departure_time_index, arrival_time_index):
+     # format the departure time
+    departure_time = datetime.strptime(flight[departure_time_index], db_date_format)
+    formatted_departure_time = departure_time.strftime(date_format) + " GMT"
+    # format the arrival time
+    arrival_time = datetime.strptime(flight[arrival_time_index], db_date_format)
+    formatted_arrival_time = arrival_time.strftime(date_format) + " GMT"
+    # replace the original departure_time and arrival_time in the flight list
+    flight = list(flight)
+    flight[departure_time_index] = formatted_departure_time
+    flight[arrival_time_index] = formatted_arrival_time
+    return flight

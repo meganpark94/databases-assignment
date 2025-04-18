@@ -3,7 +3,7 @@ from menu import clear_console
 
 # helper function to fetch the details of a destination. Calls 'display_destinations' then asks the user to input 
 # the ID of the desination they want to select, or to press 'Enter' to add a new destination. On 'Enter', calls 'add_destination'
-# to retrive a valid destination (unique city and country combination) from the user then returns the destination details and displays a success message.
+# to retrieve a valid destination (unique city and country combination) from the user then returns the destination details and displays a success message.
 # Otherwise, ensures the user has chosen a valid destination, then returns the destination details as a tuple and displays a success message.
 def get_destination():
     destinations = display_destinations()
@@ -35,7 +35,7 @@ def get_destination():
            
 
 # helper function to retrieve the name and IATA code of an airport from the user. Used to add an airport to the system. 
-# Ensures the provided airport_name and IATA codes are less than or equal to 100 characters and 10 characters, respectivly, and not empty strings
+# Ensures the provided airport_name and IATA codes are less than or equal to 100 characters and 10 characters respectivly, and not empty strings
 def get_airport_details():
     while True:
         airport_name = input("Please enter the name of the airport (e.g. Heathrow Airport): ").strip()
@@ -52,7 +52,7 @@ def get_airport_details():
 
 # helper function to allow the user to add a new destination to the system. Ensures the provided city and country are each less than or equal 
 # to 50 characters and not empty strings. Checks that the destination provided is unique (the city/country does not already exist). If not unique, 
-# displays an informative message then returnss the destination details to allow them to be used when adding an airport. Otherwise, inserts the 
+# displays an informative message then returns the destination details to allow them to be used when adding an airport. Otherwise, inserts the 
 # new destination into the database, displays a success message and returns the destination details. 
 def add_destination():
     clear_console()
@@ -97,7 +97,7 @@ def display_destinations():
     return destinations
 
 # helper function to fetch and display a list of aiports and their corresponding destinations (city & country).
-# Optionally accepts a departure_airport_id ehcih, when provided, will be excluded from the results - used to omit the
+# Optionally accepts a departure_airport_id which, when provided, will be excluded from the results - used to omit the
 # departure aurport when choosing an arrival airport for a flight
 def display_airports_and_destinations(departure_airport_id=None):
     conn = sqlite3.connect('flight_management')

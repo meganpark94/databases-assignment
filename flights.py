@@ -1,10 +1,10 @@
 from datetime import datetime
-from flights_helpers import display_flights, generate_flight_number, get_departure_time, get_flight, get_flight_duration, select_airport
+from flights_helpers import display_flights, format_flight_times, generate_flight_number, get_departure_time, get_flight, get_flight_duration, select_airport
 from menu import clear_console, create_menu
 import sqlite3
 from pilots import assign_pilot_to_flight, view_assigned_flights
-
-date_format = "%Y-%m-%d %H:%M:%S"
+date_format = "%d-%m-%Y %H:%M"
+db_date_format = "%Y-%m-%d %H:%M:%S"
 
 # function to display the top-level 'flights' menu - 'Flight Management' - and handle user 
 # selection. Accepts the previous_menu to allow the user to return to the main
@@ -47,9 +47,10 @@ def view_flights_menu(previous_menu):
         "heading": "=== View Flights by Criteria Menu ===",
         "1": ("View flights assigned to a pilot", view_assigned_flights), # may be able to call function in pilots
         "2": ("View flights to a specific destination", view_flights_to_destination),
-        "3": ("View all cancelled flights", view_cancelled_flights), # including cancel
-        "4": ("Sort flights by duration", sort_flights_by_duration),
-        "5": ("Return to Previous Menu", lambda: previous_menu()),
+        "3": ("View all scheduled flights", view_scheduled_flights), # including cancel
+        "4": ("View all cancelled flights", view_cancelled_flights), # including cancel
+        "5": ("Sort flights by duration", sort_flights_by_duration),
+        "6": ("Return to Previous Menu", lambda: previous_menu()),
     }
     clear_console()
     create_menu(view_flights_menu, previous_menu)
@@ -63,8 +64,8 @@ def change_departure_time():
     new_departure_time = get_departure_time(flight_to_update, existing_flight=True)
     old_departure_time = flight_to_update[3]
     old_arrival_time = flight_to_update[5]
-    flight_duration = new_departure_time - datetime.strptime(old_departure_time, date_format)
-    new_arrival_time = datetime.strptime(old_arrival_time, date_format) + flight_duration
+    flight_duration = new_departure_time - datetime.strptime(old_departure_time, db_date_format)
+    new_arrival_time = datetime.strptime(old_arrival_time, db_date_format) + flight_duration
     conn = sqlite3.connect('flight_management')
     cursor = conn.cursor()
     cursor.execute('''
@@ -77,7 +78,7 @@ def change_departure_time():
     conn.close()
     flight_number = flight_to_update[1]
     clear_console()
-    print(f"Flight {flight_number} departure time updated to {new_departure_time}. Arrival time updated to {new_arrival_time} accordingly.")
+    print(f"Flight {flight_number} departure time updated to {new_departure_time.strftime(date_format)} GMT. Arrival time updated to {new_arrival_time.strftime(date_format)} GMT accordingly.")
 
 # function to change the status of a flight to 'cancelled'. Calls 'get_flight' to retrieve the flight to be cancelled from the user. 
 # Asks the user to confirm they wish to cancel the flight. Displays a success message to the user after they choose to cancel the flight, 
@@ -159,10 +160,12 @@ def schedule_a_flight():
     conn.close()
     clear_console()
     print(f"\nFlight to {arrival_airport[3]}, {arrival_airport[4]} scheduled successfully.\n"
-          f"Departing from {departure_airport[1]} at {departure_time}\n"
-          f"Arriving at {arrival_airport[1]} at {arrival_time}")
+          f"Departing from {departure_airport[1]} at {departure_time.strftime(date_format)} GMT\n"
+          f"Arriving at {arrival_airport[1]} at {arrival_time.strftime(date_format)} GMT")
 
-# function to retrive any existing flights to a user-provided city or country. 
+# function to retrive any existing flights to a user-provided city or country. Passes the relevant departure and arrival time 
+# column indicies (to format time columns to be easily readable), columns and destination to 'display_flights' to disply all flights 
+# to the user-provided destination.
 def view_flights_to_destination():
     clear_console()
     print("========== View flights to a given destination ==========")
@@ -180,8 +183,15 @@ def view_flights_to_destination():
         print("\nYou did not provide a location. Displaying flights to all saved locations...\n")
     else:
         print(f"\n==========Flights to {provided_location}==========")
-    display_flights(columns = columns, destination=provided_location)
+    display_flights(departure_time_index=2, arrival_time_index=4, columns = columns, destination=provided_location)
    
+# function to view all scheduled flights. Calls 'display_flights' to print the relevant flight details for 
+# scheduled flights, or an informative message if no scheduled flights exist
+def view_scheduled_flights():
+    clear_console()
+    print("========== Scheduled flights ==========")
+    display_flights(status="scheduled")
+
 # function to view all cancelled flights. Calls 'display_flights' to print the relevant flight details for 
 # cancelled flights, or an informative message if no cancelled flights exist
 def view_cancelled_flights():
@@ -215,9 +225,11 @@ def sort_flights_by_duration():
     conn.close()
     if not flights:
         print("\nNo flights found.")
+
     for flight in flights:
         flight_id, flight_number, departure_airport, departure_time, arrival_airport, arrival_time, duration = flight
-        print(f"Flight {flight_number} | Departure: {departure_airport}, {departure_time} | Arrival: {arrival_airport}, {arrival_time} | Duration: {int(duration)} minutes.")
+        flight = format_flight_times(flight, 3, 5)
+        print(f"Flight {flight_number} | Departure: {departure_airport}, {departure_time} GMT | Arrival: {arrival_airport}, {arrival_time} GMT | Duration: {int(duration)} minutes.")
         print("-" * 50)
     
 

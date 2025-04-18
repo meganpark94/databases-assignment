@@ -115,18 +115,18 @@ def get_name():
             clear_console()
             return first_name, last_name  
 
-# helper function to get the license number of a pilot from the user. Used to add a pilot to the system and to update a pilot's license number. 
-# Ensures the provided license number is less than or equal to 20 characters, not an empty string and does not already exist
+# helper function to get the licence number of a pilot from the user. Used to add a pilot to the system and to update a pilot's licence number. 
+# Ensures the provided licence number is less than or equal to 20 characters, not an empty string and does not already exist
 # in the 'pilots' table
-def get_license_number(pilot_name):
+def get_licence_number(pilot_name):
     while True:
-        license_number = input(f"Please enter {pilot_name}'s license number (e.g. LIC667788): ").strip()
-        if len(license_number) > 20: 
+        licence_number = input(f"Please enter {pilot_name}'s licence number (e.g. LIC667788): ").strip()
+        if len(licence_number) > 20: 
             clear_console()
-            print(f"Your input: {license_number} \n Pilot's license number must not exceed 20 characters.")
-        elif not license_number:
+            print(f"Your input: {licence_number} \n Pilot's licence number must not exceed 20 characters.")
+        elif not licence_number:
             clear_console()
-            print(f"Your input: {license_number} \n You must provide a license number for the pilot.")
+            print(f"Your input: {licence_number} \n You must provide a licence number for the pilot.")
         else: 
             clear_console()
-            return license_number
+            return licence_number

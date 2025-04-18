@@ -18,7 +18,7 @@ def display_destinations_menu(previous_menu):
     create_menu(destinations_menu, previous_menu)
 
 # function to display the total number of departing or arriving flights from or to an airport. Accepts the
-# 'type' of flight as an argument(departing or arriving) then sets the 'airport_id_type' accordingly. Fetches the
+# 'type' of flight as an argument (departing or arriving) then sets the 'airport_id_type' accordingly. Fetches the
 # number of flights to or from each airport and displays the results in a readable format
 def display_airport_flight_count(type):
     clear_console()
